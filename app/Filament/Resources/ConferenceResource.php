@@ -7,9 +7,11 @@ use App\Filament\Resources\ConferenceResource\Pages;
 use App\Filament\Resources\ConferenceResource\RelationManagers;
 use App\Models\Conference;
 use App\Models\Venue;
+use Closure;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,35 +28,68 @@ class ConferenceResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required(),
-                Forms\Components\TextInput::make('description')
-                    ->required(),
-                Forms\Components\DateTimePicker::make('start_date')
-                    ->native(false)
-                    ->required(),
-                Forms\Components\DateTimePicker::make('end_date')
-                    ->native(false)
-                    ->required(),
-                Forms\Components\TextInput::make('status')
-                    ->required(),
-                Forms\Components\Select::make('region')
-
-                    // NOTE: This is important to make the venue reactive.
-                    ->live()
-                    ->enum(Region::class)
-                    ->options(Region::class)
-                    ->searchable()
-                    ->preload()
-                    ->required(),
-                Forms\Components\Select::make('venue_id')
-
-                    // FIXME: If for example the client create a edits the current venue, the region should be updated
-                    ->editOptionForm(Venue::getForm())
-                    ->createOptionForm(Venue::getForm())
-                    ->relationship('venue', 'name', modifyQueryUsing: function (Builder $query, Get $get) {
-                        return $query->where('region', $get('region'));
-                    }),
+                Forms\Components\Section::make('General Information')
+                    ->aside()
+                    ->description('Provide general details about the event.')
+                    ->icon('heroicon-o-information-circle')
+                    ->collapsible()
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required(),
+                        Forms\Components\TextInput::make('description')
+                            ->required(),
+                    ]),
+                    Forms\Components\Section::make('Schedule')
+                        ->aside()
+                        ->description('Set the event schedule.')
+                        ->icon('heroicon-o-calendar')
+                        ->collapsible()
+                        ->schema([
+                            Forms\Components\DateTimePicker::make('start_date')
+                                ->native(false)
+                                ->required(),
+                            Forms\Components\DateTimePicker::make('end_date')
+                                ->native(false)
+                                ->required(),
+                        ]),
+                        Forms\Components\Section::make('Location')
+                            ->aside()
+                            ->description('Select the event location and venue.')
+                            ->collapsible()
+                            ->schema([
+                                Forms\Components\Select::make('region')
+                                    ->live()
+                                    ->enum(Region::class)
+                                    ->options(Region::class)
+                                    ->searchable()
+                                    ->preload()
+                                    ->reactive()
+                                    // FIXME: when editing the venue's region inline update the region field accordingly
+                                    ->afterStateUpdated(function (Set $set, ?string $state) {
+                                        $set('venue_id', null);
+                                    })
+                                    ->required(),
+                                Forms\Components\Select::make('venue_id')
+                                    ->editOptionForm(Venue::getForm())
+                                    ->createOptionForm(Venue::getForm())
+                                    ->reactive()
+                                    ->relationship('venue', 'name', modifyQueryUsing: function (Builder $query, Get $get) {
+                                        return $query->where('region', $get('region'));
+                                    }),
+                            ]),
+                            Forms\Components\Section::make('Additional Information')
+                                ->aside()
+                                ->description('Set the event status and speakers.')
+                                ->icon('heroicon-o-information-circle')
+                                ->collapsible()
+                                ->schema([
+                                    Forms\Components\TextInput::make('status')
+                                        ->required(),
+                                    Forms\Components\CheckboxList::make('speakers')
+                                        ->columnSpanFull()
+                                        ->columns(['md' => 2, 'lg' => 3])
+                                        ->relationship('speakers', 'name'),
+                                ]),
             ]);
     }
 

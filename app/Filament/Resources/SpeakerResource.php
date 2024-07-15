@@ -33,6 +33,28 @@ class SpeakerResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\TextInput::make('twitter_handle')
                     ->required(),
+                Forms\Components\CheckboxList::make('qualifications')
+                    ->hint('Select all that apply.')
+                    ->helperText('These are the qualifications of the speaker.')
+                    ->searchable()
+                    ->bulkToggleable()
+                    ->columnSpanFull()
+                    ->columns(['md' => 2, 'lg' => 3])
+                    ->options([
+                        'community-member' => 'Community Member',
+                        'youtube-creator' => 'YouTube Creator',
+                        'conference-speaker' => 'Conference Speaker',
+                        'conference-organizer' => 'Conference Organizer',
+                        'podcast-host' => 'Podcast Host',
+                    ])
+                    ->descriptions([
+                        'community-member' => 'A member of the community.',
+                        'youtube-creator' => 'A creator on YouTube.',
+                        'conference-speaker' => 'A speaker at conferences.',
+                        'conference-organizer' => 'An organizer of conferences.',
+                        'podcast-host' => 'A host of a podcast.',
+                    ])
+                    ->required(),
             ]);
     }
 
