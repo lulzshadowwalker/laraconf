@@ -2,11 +2,14 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\Region;
 use App\Filament\Resources\ConferenceResource\Pages;
 use App\Filament\Resources\ConferenceResource\RelationManagers;
 use App\Models\Conference;
+use App\Models\Venue;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -28,15 +31,30 @@ class ConferenceResource extends Resource
                 Forms\Components\TextInput::make('description')
                     ->required(),
                 Forms\Components\DateTimePicker::make('start_date')
+                    ->native(false)
                     ->required(),
                 Forms\Components\DateTimePicker::make('end_date')
+                    ->native(false)
                     ->required(),
                 Forms\Components\TextInput::make('status')
                     ->required(),
-                Forms\Components\TextInput::make('region')
+                Forms\Components\Select::make('region')
+
+                    // NOTE: This is important to make the venue reactive.
+                    ->live()
+                    ->enum(Region::class)
+                    ->options(Region::class)
+                    ->searchable()
+                    ->preload()
                     ->required(),
                 Forms\Components\Select::make('venue_id')
-                    ->relationship('venue', 'name'),
+
+                    // FIXME: If for example the client create a edits the current venue, the region should be updated
+                    ->editOptionForm(Venue::getForm())
+                    ->createOptionForm(Venue::getForm())
+                    ->relationship('venue', 'name', modifyQueryUsing: function (Builder $query, Get $get) {
+                        return $query->where('region', $get('region'));
+                    }),
             ]);
     }
 
